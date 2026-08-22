@@ -1,9 +1,11 @@
 package com.enterprise.aiagent.tool;
 
+import com.enterprise.aiagent.client.OrderServiceClient;
 import com.enterprise.aiagent.client.ProductServiceClient;
 import com.enterprise.aiagent.model.dto.ProductDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -15,10 +17,13 @@ import java.util.List;
  * The LLM calls these methods when it needs product information
  * to answer user questions.
  */
-@Slf4j
+//@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ProductTool {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ProductTool.class);
 
     private final ProductServiceClient productClient;
 

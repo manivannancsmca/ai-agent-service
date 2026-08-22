@@ -1,9 +1,11 @@
 package com.enterprise.aiagent.service;
 
+import com.enterprise.aiagent.client.OrderServiceClient;
 import com.enterprise.aiagent.model.entity.ConversationEntity;
 import com.enterprise.aiagent.repository.ConversationRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,10 +16,13 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
-@Slf4j
+//@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConversationService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ConversationService.class);
 
     private final ConversationRepository conversationRepository;
 

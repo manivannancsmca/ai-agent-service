@@ -2,6 +2,7 @@ package com.enterprise.aiagent.service;
 
 import com.enterprise.aiagent.advisor.TokenBudgetAdvisor;
 import com.enterprise.aiagent.agent.SupervisorAgent;
+import com.enterprise.aiagent.client.OrderServiceClient;
 import com.enterprise.aiagent.model.dto.ChatRequest;
 import com.enterprise.aiagent.model.dto.ChatResponse;
 import com.enterprise.aiagent.model.entity.ConversationEntity;
@@ -9,6 +10,9 @@ import com.enterprise.aiagent.repository.ConversationRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,9 +28,12 @@ import java.util.UUID;
  * 3. Collect metrics and build response DTOs
  * 4. Handle errors gracefully
  */
-@Slf4j
+//@Slf4j
 @Service
 public class AgentOrchestrator {
+
+private static final Logger log =
+            LoggerFactory.getLogger(AgentOrchestrator.class);
 
     private final SupervisorAgent supervisorAgent;
     private final ConversationService conversationService;
