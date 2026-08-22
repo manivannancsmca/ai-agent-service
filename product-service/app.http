@@ -1,0 +1,80 @@
+### Product Service - Base URL
+@baseUrl = http://localhost:8081/api/v1/products
+
+###############################################################################
+# PRODUCTS - SEARCH
+###############################################################################
+
+### Search all products
+GET {{baseUrl}}/search
+
+### Search products by keyword
+GET {{baseUrl}}/search?keyword=laptop
+
+### Search products with pagination
+GET {{baseUrl}}/search?keyword=laptop&page=0&size=10
+
+### Search products - second page
+GET {{baseUrl}}/search?keyword=phone&page=1&size=5
+
+### Search products without keyword, custom page size
+GET {{baseUrl}}/search?page=0&size=20
+
+
+###############################################################################
+# PRODUCTS - GET BY ID
+###############################################################################
+
+### Get product by ID
+GET {{baseUrl}}/1
+
+### Get another product by ID
+GET {{baseUrl}}/2
+
+### Get non-existing product
+GET {{baseUrl}}/999999
+
+
+###############################################################################
+# PRODUCTS - CATEGORY
+###############################################################################
+
+### Get products by category
+GET {{baseUrl}}/category/Electronics
+
+### Get products by category with limit
+GET {{baseUrl}}/category/Electronics?limit=10
+
+### Get products by another category
+GET {{baseUrl}}/category/Laptops?limit=5
+
+### Get products by category - larger limit
+GET {{baseUrl}}/category/Phones?limit=20
+
+
+###############################################################################
+# PRODUCTS - TOP RATED
+###############################################################################
+
+### Get top-rated products
+GET {{baseUrl}}/top-rated
+
+### Get top-rated products with limit
+GET {{baseUrl}}/top-rated?limit=10
+
+### Get top-rated products by category
+GET {{baseUrl}}/top-rated?category=Electronics
+
+### Get top-rated products by category with limit
+GET {{baseUrl}}/top-rated?category=Electronics&limit=5
+
+### Get top-rated laptops
+GET {{baseUrl}}/top-rated?category=Laptops&limit=10
+
+
+###############################################################################
+# PRODUCTS - CATEGORIES
+###############################################################################
+
+### Get all product categories
+GET {{baseUrl}}/categories

@@ -1,0 +1,203 @@
+# docker-compose.yml
+# Run only MySQL databases in Docker.
+# Spring Boot microservices run locally from your IDE.
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose ps
+#   docker-compose down
+#   docker-compose down -v   (delete all data)
+
+version: '3.8'
+
+services:
+
+  # ═══════════════════════════════════════════════════════════
+  #  PRODUCT SERVICE DATABASE
+  #  Local Spring Boot connects to: localhost:3311/product_db
+  # ═══════════════════════════════════════════════════════════
+  mysql-product:
+    image: mysql:8.0
+    container_name: mysql-product
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: product_db
+      MYSQL_USER: svc_user
+      MYSQL_PASSWORD: svc_password
+    ports:
+      - "3311:3306"
+    volumes:
+      - product_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - local-db
+
+  # ═══════════════════════════════════════════════════════════
+  #  ORDER SERVICE DATABASE
+  #  Local Spring Boot connects to: localhost:3312/order_db
+  # ═══════════════════════════════════════════════════════════
+  mysql-order:
+    image: mysql:8.0
+    container_name: mysql-order
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: svc_user
+      MYSQL_PASSWORD: svc_password
+    ports:
+      - "3312:3306"
+    volumes:
+      - order_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - local-db
+
+  # ═══════════════════════════════════════════════════════════
+  #  INVENTORY SERVICE DATABASE
+  #  Local Spring Boot connects to: localhost:3313/inventory_db
+  # ═══════════════════════════════════════════════════════════
+  mysql-inventory:
+    image: mysql:8.0
+    container_name: mysql-inventory
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventory_db
+      MYSQL_USER: svc_user
+      MYSQL_PASSWORD: svc_password
+    ports:
+      - "3313:3306"
+    volumes:
+      - inventory_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - local-db
+
+  # ═══════════════════════════════════════════════════════════
+  #  PAYMENT SERVICE DATABASE
+  #  Local Spring Boot connects to: localhost:3314/payment_db
+  # ═══════════════════════════════════════════════════════════
+  mysql-payment:
+    image: mysql:8.0
+    container_name: mysql-payment
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: svc_user
+      MYSQL_PASSWORD: svc_password
+    ports:
+      - "3314:3306"
+    volumes:
+      - payment_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - local-db
+
+  # ═══════════════════════════════════════════════════════════
+  #  AI AGENT SERVICE DATABASE
+  #  Local Spring Boot connects to: localhost:3315/ai_agent_db
+  # ═══════════════════════════════════════════════════════════
+  mysql-agent:
+    image: mysql:8.0
+    container_name: mysql-agent
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ai_agent_db
+      MYSQL_USER: svc_user
+      MYSQL_PASSWORD: svc_password
+    ports:
+      - "3315:3306"
+    volumes:
+      - agent_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - local-db
+
+  # ═══════════════════════════════════════════════════════════
+  #  ADMINER — Web-based DB admin UI (optional but very useful)
+  #  Open http://localhost:9090 to browse all databases
+  # ═══════════════════════════════════════════════════════════
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    restart: unless-stopped
+    ports:
+      - "9090:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql-product
+      ADMINER_DESIGN: dracula
+    depends_on:
+      mysql-product:
+        condition: service_healthy
+    networks:
+      - local-db
+
+volumes:
+  product_data:
+    driver: local
+  order_data:
+    driver: local
+  inventory_data:
+    driver: local
+  payment_data:
+    driver: local
+  agent_data:
+    driver: local
+
+networks:
+  local-db:
+    driver: bridge
