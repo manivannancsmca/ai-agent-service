@@ -1,14 +1,19 @@
 package com.enterprise.aiagent.client;
 
+import com.enterprise.aiagent.advisor.GuardrailAdvisor;
 import com.enterprise.aiagent.model.dto.InventoryDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-@Slf4j
+//@Slf4j
 @Component
 public class InventoryServiceClient {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(InventoryServiceClient.class);
 
     private final RestClient restClient;
 
