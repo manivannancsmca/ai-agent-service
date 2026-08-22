@@ -28,7 +28,7 @@ public class OrderServiceClient {
     }
 
     @CircuitBreaker(name = "serviceCall", fallbackMethod = "createOrderFallback")
-    @Retry(name = "default")
+    //@Retry(name = "default")
     public OrderDto createOrder(Long userId, List<Map<String, Object>> items) {
         log.info("Creating order for userId={} with {} items", userId, items.size());
 
@@ -46,7 +46,7 @@ public class OrderServiceClient {
     }
 
     @CircuitBreaker(name = "serviceCall", fallbackMethod = "getOrderFallback")
-    @Retry(name = "default")
+    //@Retry(name = "default")
     public OrderDto getOrder(String orderId) {
         log.info("Fetching order {}", orderId);
 
