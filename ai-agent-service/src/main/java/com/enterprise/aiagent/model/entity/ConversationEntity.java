@@ -11,7 +11,8 @@ import java.util.List;
         @Index(name = "idx_conv_user", columnList = "userId"),
         @Index(name = "idx_conv_updated", columnList = "updatedAt")
 })
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+
+
 public class ConversationEntity {
 
     @Id
@@ -44,4 +45,79 @@ public class ConversationEntity {
     protected void onUpdate() {
         this.updatedAt = Instant.now();
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getConversationId() {
+        return conversationId;
+    }
+
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public List<MessageEntity> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<MessageEntity> messages) {
+        this.messages = messages;
+    }
+
+    public ConversationEntity(){}
+
+    public ConversationEntity(String conversationId, String userId, String title, Instant createdAt, Instant updatedAt,
+            List<MessageEntity> messages) {
+        this.conversationId = conversationId;
+        this.userId = userId;
+        this.title = title;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.messages = messages;
+    }
+
+    @Override
+    public String toString() {
+        return "ConversationEntity [id=" + id + ", conversationId=" + conversationId + ", userId=" + userId + ", title="
+                + title + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", messages=" + messages + "]";
+    }
+    
 }

@@ -34,11 +34,10 @@ public class ConversationService {
 
     @Transactional
     public ConversationEntity createConversation(String conversationId, String userId) {
-        ConversationEntity entity = ConversationEntity.builder()
-                .conversationId(conversationId != null ? conversationId : UUID.randomUUID().toString())
-                .userId(userId != null ? userId : "anonymous")
-                .title("New Conversation")
-                .build();
+        ConversationEntity entity = new ConversationEntity();
+                entity.setConversationId(conversationId != null ? conversationId : UUID.randomUUID().toString());
+                entity.setUserId(userId != null ? userId : "anonymous");
+                entity.setTitle("New Conversation");
 
         return conversationRepository.save(entity);
     }
