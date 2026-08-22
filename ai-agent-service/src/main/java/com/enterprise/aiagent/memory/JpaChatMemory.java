@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.*;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,7 +78,7 @@ public class JpaChatMemory implements ChatMemory {
 
     @Override
     @Transactional
-    public void clear(String conversationId) {
+    public void clear(@NonNull String conversationId) {
         conversationRepository.findByConversationId(conversationId)
                 .ifPresent(conv -> {
                     conv.getMessages().clear();

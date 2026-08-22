@@ -4,92 +4,115 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.client.advisor.api.AdvisorChain;
-import org.springframework.ai.chat.client.advisor.api.CallAroundAdvisor;
-import org.springframework.ai.chat.client.advisor.api.StreamAroundAdvisor;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.client.AdvisedRequest;
-import org.springframework.ai.chat.client.AdvisedResponse;
+import org.springframework.ai.chat.client.ChatClientRequest;
+import org.springframework.ai.chat.client.ChatClientResponse;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
+import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Logs every AI interaction for observability and debugging.
- * Tracks latency, token usage, and error rates via Micrometer.
- */
 @Slf4j
 @Component
-public class LoggingAdvisor implements CallAroundAdvisor {
+public class LoggingAdvisor implements CallAdvisor {
 
-    private final MeterRegistry meterRegistry;
     private final Timer responseTimer;
     private final Counter requestCounter;
     private final Counter errorCounter;
 
     public LoggingAdvisor(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
+
         this.responseTimer = Timer.builder("ai.agent.request.duration")
                 .description("AI agent request latency")
                 .register(meterRegistry);
+
         this.requestCounter = Counter.builder("ai.agent.requests.total")
                 .description("Total AI agent requests")
                 .register(meterRegistry);
+
         this.errorCounter = Counter.builder("ai.agent.errors.total")
                 .description("Total AI agent errors")
                 .register(meterRegistry);
     }
 
     @Override
-    public AdvisedResponse aroundCall(AdvisedRequest request, AdvisorChain chain) {
-        long startTime = System.nanoTime();
+    public ChatClientResponse adviseCall(
+            ChatClientRequest request,
+            CallAdvisorChain chain) {
+
+        long start = System.nanoTime();
+
         requestCounter.increment();
 
-        String conversationId = request.adviseContext()
-                .getOrDefault("conversation_id", "unknown").toString();
-
-        log.info("AI Request [conv={}]: system='{}', user='{}'",
-                conversationId,
-                truncate(request.system(), 100),
-                truncate(request.userText(), 200));
+        log.info(
+                "AI request: {}",
+                truncate(request.prompt().getContents(), 500)
+        );
 
         try {
-            AdvisedResponse response = chain.nextAroundCall(request);
 
-            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-            responseTimer.record(durationMs, TimeUnit.MILLISECONDS);
+            ChatClientResponse response = chain.nextCall(request);
 
-            ChatResponse chatResponse = response.response();
-            if (chatResponse != null && chatResponse.getMetadata() != null) {
-                var usage = chatResponse.getMetadata().getUsage();
-                if (usage != null) {
-                    log.info("AI Response [conv={}]: tokens={}/{}, duration={}ms",
-                            conversationId,
-                            usage.getPromptTokens(),
-                            usage.getGenerationTokens(),
-                            durationMs);
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(
+                    System.nanoTime() - start
+            );
 
-                    meterRegistry.counter("ai.agent.tokens.prompt")
-                            .increment(usage.getPromptTokens());
-                    meterRegistry.counter("ai.agent.tokens.completion")
-                            .increment(usage.getGenerationTokens());
-                }
-            }
+            responseTimer.record(
+                    durationMs,
+                    TimeUnit.MILLISECONDS
+            );
 
-            log.debug("AI Response [conv={}]: content='{}'",
-                    conversationId,
-                    truncate(chatResponse.getResult().getOutput().getText(), 500));
+            log.info(
+                    "AI request completed: duration={}ms",
+                    durationMs
+            );
+
+            logResponse(response);
 
             return response;
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
+
             errorCounter.increment();
-            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
-            log.error("AI Request failed [conv={}, duration={}ms]: {}",
-                    conversationId, durationMs, e.getMessage(), e);
+
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(
+                    System.nanoTime() - start
+            );
+
+            log.error(
+                    "AI request failed: duration={}ms, error={}",
+                    durationMs,
+                    e.getMessage(),
+                    e
+            );
+
             throw e;
         }
+    }
+
+    private void logResponse(ChatClientResponse response) {
+
+        if (response == null || response.chatResponse() == null) {
+            return;
+        }
+
+        var chatResponse = response.chatResponse();
+
+        if (chatResponse.getResult() == null
+                || chatResponse.getResult().getOutput() == null) {
+            return;
+        }
+
+        String text =
+                chatResponse.getResult()
+                        .getOutput()
+                        .getText();
+
+        log.debug(
+                "AI response: '{}'",
+                truncate(text, 500)
+        );
     }
 
     @Override
@@ -99,11 +122,17 @@ public class LoggingAdvisor implements CallAroundAdvisor {
 
     @Override
     public int getOrder() {
-        return Integer.MAX_VALUE; // Run last (outermost)
+        return Integer.MAX_VALUE;
     }
 
     private String truncate(String text, int maxLength) {
-        if (text == null) return "null";
-        return text.length() > maxLength ? text.substring(0, maxLength) + "..." : text;
+
+        if (text == null) {
+            return "null";
+        }
+
+        return text.length() > maxLength
+                ? text.substring(0, maxLength) + "..."
+                : text;
     }
 }

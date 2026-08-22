@@ -29,7 +29,8 @@ public class ProductTool {
             discover products. Results are limited to 10 items by default.
             """)
     public List<ProductDto> searchProducts(
-            @ToolParam("The search keyword — e.g. 'laptop', 'wireless headphones', 'running shoes'")
+            @ToolParam(description = "The search keyword — e.g. 'laptop', 'wireless headphones', 'running shoes'",
+                required = true)
             String keyword) {
 
         log.info("Tool invoked: searchProducts(keyword='{}')", keyword);
@@ -45,7 +46,8 @@ public class ProductTool {
             a specific product the user is interested in.
             """)
     public ProductDto getProductDetails(
-            @ToolParam("The unique numeric product identifier") Long productId) {
+            @ToolParam(description = "The unique numeric product identifier",
+                required = true) Long productId) {
 
         log.info("Tool invoked: getProductDetails(productId={})", productId);
         ProductDto product = productClient.getProductById(productId);
@@ -62,8 +64,9 @@ public class ProductTool {
             Returns up to the specified limit of products.
             """)
     public List<ProductDto> getProductsByCategory(
-            @ToolParam("The product category name") String category,
-            @ToolParam("Maximum number of products to return (default 10)") int limit) {
+            @ToolParam(description = "The product category name",
+                required = true) String category,
+            @ToolParam(description = "Maximum number of products to return (default 10)", required = true) int limit) {
 
         log.info("Tool invoked: getProductsByCategory(category='{}', limit={})", category, limit);
         return productClient.getProductsByCategory(category, Math.min(limit, 50));
@@ -76,8 +79,10 @@ public class ProductTool {
             rating and review count.
             """)
     public List<ProductDto> getTopRatedProducts(
-            @ToolParam("The product category") String category,
-            @ToolParam("Number of top products to return") int limit) {
+            @ToolParam(description = "The product category",
+                required = true) String category,
+            @ToolParam(description = "Number of top products to return",
+                required = true) int limit) {
 
         log.info("Tool invoked: getTopRatedProducts(category='{}', limit={})", category, limit);
         return productClient.getTopRated(category, Math.min(limit, 20));

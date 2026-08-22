@@ -26,9 +26,12 @@ public class PaymentTool {
             payment details. NEVER process payments without user consent.
             """)
     public PaymentResult processPayment(
-            @ToolParam("The order ID this payment is for") String orderId,
-            @ToolParam("The payment amount") BigDecimal amount,
-            @ToolParam("Payment method: 'credit_card', 'debit_card', 'paypal', 'apple_pay'")
+            @ToolParam(description = "The order ID this payment is for",
+                required = true) String orderId,
+            @ToolParam(description = "The payment amount",
+                required = true) BigDecimal amount,
+            @ToolParam(description = "Payment method: 'credit_card', 'debit_card', 'paypal', 'apple_pay'",
+                required = true)
             String paymentMethod) {
 
         log.info("Tool invoked: processPayment(orderId={}, amount={}, method={})",
@@ -42,7 +45,8 @@ public class PaymentTool {
             Returns the refund confirmation details.
             """)
     public PaymentResult refundPayment(
-            @ToolParam("The original payment transaction ID") String transactionId) {
+            @ToolParam(description = "The original payment transaction ID",
+                required = true) String transactionId) {
 
         log.info("Tool invoked: refundPayment(transactionId={})", transactionId);
         return paymentClient.refundPayment(transactionId);

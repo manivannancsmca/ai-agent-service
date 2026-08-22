@@ -2,74 +2,112 @@ package com.enterprise.aiagent.agent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.model.ChatResponse;
-
-import java.util.List;
-import java.util.Map;
+import reactor.core.publisher.Flux;
 
 /**
  * Base class for all specialized agents.
- * Provides common functionality for chat interactions.
+ *
+ * Provides common functionality for:
+ * - synchronous chat
+ * - chat with metadata
+ * - reactive streaming
  */
 @Slf4j
 public abstract class BaseAgent {
 
-    protected final ChatClient chatClient;
+        protected final ChatClient chatClient;
 
-    protected BaseAgent(ChatClient chatClient) {
-        this.chatClient = chatClient;
-    }
-
-    /**
-     * Process a user message and return a text response.
-     * The ChatClient handles the full agentic loop: prompt → LLM → tool calls → LLM → response.
-     */
-    public String chat(String conversationId, String userMessage) {
-        log.info("Agent [{}] processing message for conversation {}", getAgentName(), conversationId);
-
-        try {
-            String response = chatClient.prompt()
-                    .user(userMessage)
-                    .advisors(advisor -> advisor
-                            .param("conversation_id", conversationId))
-                    .call()
-                    .content();
-
-            log.info("Agent [{}] completed for conversation {}", getAgentName(), conversationId);
-            return response;
-
-        } catch (Exception e) {
-            log.error("Agent [{}] failed for conversation {}: {}",
-                    getAgentName(), conversationId, e.getMessage(), e);
-            throw e;
+        protected BaseAgent(ChatClient chatClient) {
+                this.chatClient = chatClient;
         }
-    }
 
-    /**
-     * Process a user message and return the full ChatResponse with metadata.
-     */
-    public ChatResponse chatWithMetadata(String conversationId, String userMessage) {
-        return chatClient.prompt()
-                .user(userMessage)
-                .advisors(advisor -> advisor
-                        .param("conversation_id", conversationId))
-                .call()
-                .chatResponse();
-    }
+        /**
+         * Process a user message and return a text response.
+         */
+        public String chat(
+                        String conversationId,
+                        String userMessage) {
 
-    /**
-     * Stream a response for real-time UI updates.
-     */
-    public org.springframework.ai.chat.model.Flux<org.springframework.ai.chat.model.Generation> stream(
-            String conversationId, String userMessage) {
-        return chatClient.prompt()
-                .user(userMessage)
-                .advisors(advisor -> advisor
-                        .param("conversation_id", conversationId))
-                .stream()
-                .content();
-    }
+                log.info(
+                                "Agent [{}] processing message for conversation {}",
+                                getAgentName(),
+                                conversationId);
 
-    public abstract String getAgentName();
+                try {
+
+                        String response = chatClient.prompt()
+                                        .user(userMessage)
+                                        .advisors(advisor -> advisor
+                                                        .param("conversation_id", conversationId))
+                                        .call()
+                                        .content();
+
+                        log.info(
+                                        "Agent [{}] completed for conversation {}",
+                                        getAgentName(),
+                                        conversationId);
+
+                        return response;
+
+                } catch (Exception e) {
+
+                        log.error(
+                                        "Agent [{}] failed for conversation {}: {}",
+                                        getAgentName(),
+                                        conversationId,
+                                        e.getMessage(),
+                                        e);
+
+                        throw e;
+                }
+        }
+
+        /**
+         * Process a user message and return the complete ChatResponse.
+         *
+         * Useful when you need:
+         * - token usage
+         * - model metadata
+         * - finish reason
+         * - tool-call information
+         */
+        public ChatResponse chatWithMetadata(
+                        String conversationId,
+                        String userMessage) {
+
+                return chatClient.prompt()
+                                .user(userMessage)
+                                .advisors(advisor -> advisor
+                                                .param("conversation_id", conversationId))
+                                .call()
+                                .chatResponse();
+        }
+
+        /**
+         * Stream the generated response as it is produced.
+         *
+         * Returns Reactor Flux<String>.
+         */
+        public Flux<String> stream(
+                        String conversationId,
+                        String userMessage) {
+
+                log.info(
+                                "Agent [{}] starting streaming response for conversation {}",
+                                getAgentName(),
+                                conversationId);
+
+                return chatClient.prompt()
+                                .user(userMessage)
+                                .advisors(advisor -> advisor
+                                                .param("conversation_id", conversationId))
+                                .stream()
+                                .content();
+        }
+
+        /**
+         * Name of the specialized agent.
+         */
+        public abstract String getAgentName();
 }
