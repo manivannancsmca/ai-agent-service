@@ -1,25 +1,15 @@
-# docker-compose.yml
-# Run only MySQL databases in Docker.
-# Spring Boot microservices run locally from your IDE.
-#
-# Usage:
-#   docker-compose up -d
-#   docker-compose ps
-#   docker-compose down
-#   docker-compose down -v   (delete all data)
-
+# docker-compose.yml (at repository root)
 version: '3.8'
 
 services:
 
-  # ═══════════════════════════════════════════════════════════
-  #  PRODUCT SERVICE DATABASE
-  #  Local Spring Boot connects to: localhost:3311/product_db
-  # ═══════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════
+  #  DATABASES (one per service — database per service pattern)
+  # ═══════════════════════════════════════════════════
+
   mysql-product:
     image: mysql:8.0
     container_name: mysql-product
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: product_db
@@ -29,28 +19,17 @@ services:
       - "3311:3306"
     volumes:
       - product_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=200
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 5
     networks:
-      - local-db
+      - microservices
 
-  # ═══════════════════════════════════════════════════════════
-  #  ORDER SERVICE DATABASE
-  #  Local Spring Boot connects to: localhost:3312/order_db
-  # ═══════════════════════════════════════════════════════════
   mysql-order:
     image: mysql:8.0
     container_name: mysql-order
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: order_db
@@ -60,28 +39,17 @@ services:
       - "3312:3306"
     volumes:
       - order_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=200
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 5
     networks:
-      - local-db
+      - microservices
 
-  # ═══════════════════════════════════════════════════════════
-  #  INVENTORY SERVICE DATABASE
-  #  Local Spring Boot connects to: localhost:3313/inventory_db
-  # ═══════════════════════════════════════════════════════════
   mysql-inventory:
     image: mysql:8.0
     container_name: mysql-inventory
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: inventory_db
@@ -91,28 +59,17 @@ services:
       - "3313:3306"
     volumes:
       - inventory_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=200
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 5
     networks:
-      - local-db
+      - microservices
 
-  # ═══════════════════════════════════════════════════════════
-  #  PAYMENT SERVICE DATABASE
-  #  Local Spring Boot connects to: localhost:3314/payment_db
-  # ═══════════════════════════════════════════════════════════
   mysql-payment:
     image: mysql:8.0
     container_name: mysql-payment
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: payment_db
@@ -122,28 +79,17 @@ services:
       - "3314:3306"
     volumes:
       - payment_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=200
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 5
     networks:
-      - local-db
+      - microservices
 
-  # ═══════════════════════════════════════════════════════════
-  #  AI AGENT SERVICE DATABASE
-  #  Local Spring Boot connects to: localhost:3315/ai_agent_db
-  # ═══════════════════════════════════════════════════════════
   mysql-agent:
     image: mysql:8.0
     container_name: mysql-agent
-    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: ai_agent_db
@@ -153,51 +99,171 @@ services:
       - "3315:3306"
     volumes:
       - agent_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=200
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 5
     networks:
-      - local-db
+      - microservices
 
-  # ═══════════════════════════════════════════════════════════
-  #  ADMINER — Web-based DB admin UI (optional but very useful)
-  #  Open http://localhost:9090 to browse all databases
-  # ═══════════════════════════════════════════════════════════
-  adminer:
-    image: adminer:latest
-    container_name: adminer
-    restart: unless-stopped
+  # ═══════════════════════════════════════════════════
+  #  MICROSERVICES
+  # ═══════════════════════════════════════════════════
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    container_name: product-service
     ports:
-      - "9090:8080"
+      - "8081:8081"
     environment:
-      ADMINER_DEFAULT_SERVER: mysql-product
-      ADMINER_DESIGN: dracula
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql-product
+      DB_PORT: 3306
+      DB_NAME: product_db
+      DB_USERNAME: svc_user
+      DB_PASSWORD: svc_password
     depends_on:
       mysql-product:
         condition: service_healthy
     networks:
-      - local-db
+      - microservices
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql-order
+      DB_PORT: 3306
+      DB_NAME: order_db
+      DB_USERNAME: svc_user
+      DB_PASSWORD: svc_password
+    depends_on:
+      mysql-order:
+        condition: service_healthy
+    networks:
+      - microservices
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql-inventory
+      DB_PORT: 3306
+      DB_NAME: inventory_db
+      DB_USERNAME: svc_user
+      DB_PASSWORD: svc_password
+    depends_on:
+      mysql-inventory:
+        condition: service_healthy
+    networks:
+      - microservices
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql-payment
+      DB_PORT: 3306
+      DB_NAME: payment_db
+      DB_USERNAME: svc_user
+      DB_PASSWORD: svc_password
+    depends_on:
+      mysql-payment:
+        condition: service_healthy
+    networks:
+      - microservices
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════
+  #  AI AGENT SERVICE (the orchestrator)
+  # ═══════════════════════════════════════════════════
+
+  ai-agent-service:
+    build:
+      context: ./ai-agent-service
+      dockerfile: Dockerfile
+    container_name: ai-agent-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DB_HOST: mysql-agent
+      DB_PORT: 3306
+      DB_NAME: ai_agent_db
+      DB_USERNAME: svc_user
+      DB_PASSWORD: svc_password
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      ORDER_SERVICE_URL: http://order-service:8082
+      INVENTORY_SERVICE_URL: http://inventory-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8084
+    depends_on:
+      mysql-agent:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+    networks:
+      - microservices
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════
+  #  MONITORING
+  # ═══════════════════════════════════════════════════
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - microservices
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    networks:
+      - microservices
 
 volumes:
   product_data:
-    driver: local
   order_data:
-    driver: local
   inventory_data:
-    driver: local
   payment_data:
-    driver: local
   agent_data:
-    driver: local
 
 networks:
-  local-db:
+  microservices:
     driver: bridge
