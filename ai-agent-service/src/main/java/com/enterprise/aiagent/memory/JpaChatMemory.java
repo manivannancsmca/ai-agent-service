@@ -8,24 +8,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.messages.*;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.MessageType;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
- * Production-grade ChatMemory backed by MySQL via JPA.
+ * Production-grade ChatMemory backed by MySQL/JPA.
  *
- * This stores the full conversation history including tool call results,
- * which is critical for the agentic loop — the LLM needs to remember
- * what tools it already called and what results it received.
+ * Compatible with Spring AI 1.0.x ChatMemory API.
  *
- * Implements the sliding window strategy: keeps the system message
- * plus the last N exchanges to stay within token budgets.
+ * Responsibilities:
+ * - Persist conversation messages
+ * - Retrieve conversation history
+ * - Maintain a configurable message window
+ * - Preserve tool-response information
+ * - Clear conversations
  */
 @Slf4j
 @Component
@@ -36,109 +42,321 @@ public class JpaChatMemory implements ChatMemory {
     private final MessageRepository messageRepository;
     private final ObjectMapper objectMapper;
 
-    private static final int DEFAULT_WINDOW_SIZE = 40; // messages
+    /**
+     * Maximum number of messages returned to the LLM.
+     *
+     * Important:
+     * This is a message window, not a token window.
+     */
+    private static final int DEFAULT_WINDOW_SIZE = 40;
+
+    // ============================================================
+    // ADD
+    // ============================================================
 
     @Override
     @Transactional
-    public void add(String conversationId, List<Message> messages) {
-        ConversationEntity conversation = getOrCreateConversation(conversationId);
-        int currentSequence = conversationRepository.countMessagesByConversationId(conversationId);
+    public void add(
+            @NonNull String conversationId,
+            @NonNull List<Message> messages) {
+
+        if (messages.isEmpty()) {
+            return;
+        }
+
+        ConversationEntity conversation =
+                getOrCreateConversation(conversationId);
+
+        long currentSequence =
+                conversationRepository.countMessagesByConversationId(
+                        conversationId);
 
         for (Message message : messages) {
+
             currentSequence++;
+
             MessageEntity entity = MessageEntity.builder()
                     .conversation(conversation)
-                    .sequenceNumber(currentSequence)
+                    .sequenceNumber((int) currentSequence)
                     .messageType(message.getMessageType().name())
                     .content(message.getText())
-                    .tokenCount(estimateTokenCount(message.getText()))
-                    .toolMetadata(serializeToolMetadata(message))
+                    .tokenCount(
+                            estimateTokenCount(message.getText()))
+                    .toolMetadata(
+                            serializeToolMetadata(message))
                     .build();
+
             messageRepository.save(entity);
         }
 
-        log.debug("Added {} messages to conversation {}", messages.size(), conversationId);
+        log.debug(
+                "Added {} messages to conversation {}",
+                messages.size(),
+                conversationId
+        );
     }
 
+    // ============================================================
+    // GET
+    // ============================================================
+
+    /**
+     * Spring AI 1.0.x ChatMemory contract.
+     *
+     * The old:
+     *
+     *     get(String conversationId, int lastN)
+     *
+     * is no longer the correct API.
+     */
     @Override
     @Transactional(readOnly = true)
-    public List<Message> get(String conversationId, int lastN) {
-        int windowSize = lastN > 0 ? lastN : DEFAULT_WINDOW_SIZE;
+    public List<Message> get(@NonNull String conversationId) {
 
-        List<MessageEntity> entities = messageRepository
-                .findLastNByConversationId(conversationId, windowSize);
+        List<MessageEntity> entities =
+                messageRepository.findLastNByConversationId(
+                        conversationId,
+                        DEFAULT_WINDOW_SIZE
+                );
 
-        List<Message> messages = new ArrayList<>(entities.size());
-        for (MessageEntity entity : entities.reversed()) { // reversed because DESC query
+        if (entities.isEmpty()) {
+            return List.of();
+        }
+
+        List<Message> messages =
+                new ArrayList<>(entities.size());
+
+        /*
+         * Repository query returns DESC order.
+         *
+         * LLM expects chronological order:
+         * oldest -> newest
+         */
+        for (MessageEntity entity : entities.reversed()) {
             messages.add(deserializeMessage(entity));
         }
 
         return messages;
     }
 
+    // ============================================================
+    // CLEAR
+    // ============================================================
+
     @Override
     @Transactional
     public void clear(@NonNull String conversationId) {
-        conversationRepository.findByConversationId(conversationId)
-                .ifPresent(conv -> {
-                    conv.getMessages().clear();
-                    conversationRepository.save(conv);
-                    log.info("Cleared conversation {}", conversationId);
+
+        conversationRepository
+                .findByConversationId(conversationId)
+                .ifPresent(conversation -> {
+
+                    /*
+                     * If cascade + orphanRemoval are correctly configured,
+                     * this removes child messages.
+                     */
+                    conversation.getMessages().clear();
+
+                    conversationRepository.save(conversation);
+
+                    log.info(
+                            "Cleared conversation {}",
+                            conversationId
+                    );
                 });
     }
 
+    // ============================================================
+    // SIZE
+    // ============================================================
+
     @Transactional(readOnly = true)
-    public int size(String conversationId) {
-        return (int) conversationRepository.countMessagesByConversationId(conversationId);
+    public long size(@NonNull String conversationId) {
+
+        return conversationRepository
+                .countMessagesByConversationId(conversationId);
     }
 
-    // ─── Internal Helpers ────────────────────────────────────────
+    // ============================================================
+    // INTERNAL
+    // ============================================================
 
-    private ConversationEntity getOrCreateConversation(String conversationId) {
-        return conversationRepository.findByConversationId(conversationId)
-                .orElseGet(() -> conversationRepository.save(
-                        ConversationEntity.builder()
-                                .conversationId(conversationId)
-                                .userId("system") // Will be updated by service layer
-                                .title("Auto-created conversation")
-                                .build()
-                ));
+    private ConversationEntity getOrCreateConversation(
+            String conversationId) {
+
+        return conversationRepository
+                .findByConversationId(conversationId)
+                .orElseGet(() ->
+                        conversationRepository.save(
+                                ConversationEntity.builder()
+                                        .conversationId(conversationId)
+                                        .userId("system")
+                                        .title("Auto-created conversation")
+                                        .build()
+                        )
+                );
     }
 
-    private Message deserializeMessage(MessageEntity entity) {
-        return switch (MessageType.valueOf(entity.getMessageType())) {
-            case SYSTEM -> new SystemMessage(entity.getContent());
-            case USER -> new UserMessage(entity.getContent());
-            case ASSISTANT -> new AssistantMessage(entity.getContent());
-            case TOOL -> new ToolResponseMessage(List.of(
-                    new ToolResponseMessage.ToolResponse(
-                            entity.getToolMetadata() != null ? entity.getToolMetadata() : "",
-                            entity.getContent()
-                    )
-            ));
+    // ============================================================
+    // MESSAGE DESERIALIZATION
+    // ============================================================
+
+    private Message deserializeMessage(
+            MessageEntity entity) {
+
+        String content = entity.getContent();
+
+        MessageType messageType =
+                MessageType.valueOf(entity.getMessageType());
+
+        return switch (messageType) {
+
+            case SYSTEM ->
+                    new SystemMessage(content);
+
+            case USER ->
+                    new UserMessage(content);
+
+            case ASSISTANT ->
+                    new AssistantMessage(content);
+
+            case TOOL ->
+                    deserializeToolMessage(entity);
+
+            default ->
+                    throw new IllegalStateException(
+                            "Unsupported message type: "
+                                    + entity.getMessageType()
+                    );
         };
     }
 
-    private String serializeToolMetadata(Message message) {
+    /**
+     * Reconstruct Spring AI ToolResponseMessage.
+     */
+    private Message deserializeToolMessage(
+            MessageEntity entity) {
+
         try {
+
+            String toolMetadata = entity.getToolMetadata();
+
+            /*
+             * Our persistence format stores the tool response IDs.
+             *
+             * If metadata is not available, use safe defaults.
+             */
+            String id = "persisted-tool-response";
+            String name = "unknown-tool";
+
+            if (toolMetadata != null &&
+                    !toolMetadata.isBlank()) {
+
+                try {
+
+                    List<String> ids =
+                            objectMapper.readValue(
+                                    toolMetadata,
+                                    objectMapper.getTypeFactory()
+                                            .constructCollectionType(
+                                                    List.class,
+                                                    String.class
+                                            )
+                            );
+
+                    if (!ids.isEmpty()) {
+                        id = ids.get(0);
+                    }
+
+                } catch (Exception e) {
+
+                    log.debug(
+                            "Unable to deserialize tool metadata",
+                            e
+                    );
+                }
+            }
+
+            ToolResponseMessage.ToolResponse response =
+                    new ToolResponseMessage.ToolResponse(
+                            id,
+                            name,
+                            entity.getContent()
+                    );
+
+            return new ToolResponseMessage(
+                    List.of(response)
+            );
+
+        } catch (Exception e) {
+
+            log.error(
+                    "Failed to deserialize tool message id={}",
+                    entity.getId(),
+                    e
+            );
+
+            /*
+             * Do not silently corrupt the conversation.
+             * Fail fast because malformed tool history can break
+             * the agentic tool-call sequence.
+             */
+            throw new IllegalStateException(
+                    "Unable to deserialize tool message",
+                    e
+            );
+        }
+    }
+
+    // ============================================================
+    // TOOL METADATA
+    // ============================================================
+
+    private String serializeToolMetadata(
+            Message message) {
+
+        try {
+
             if (message instanceof ToolResponseMessage toolResponse) {
+
                 return objectMapper.writeValueAsString(
-                        toolResponse.getResponses().stream()
-                                .map(r -> r.id())
+                        toolResponse.getResponses()
+                                .stream()
+                                .map(response -> response.id())
                                 .toList()
                 );
             }
+
         } catch (Exception e) {
-            log.warn("Failed to serialize tool metadata", e);
+
+            log.warn(
+                    "Failed to serialize tool metadata",
+                    e
+            );
         }
+
         return null;
     }
 
+    // ============================================================
+    // TOKEN ESTIMATION
+    // ============================================================
+
     /**
-     * Rough token estimation (1 token ≈ 4 chars for English).
-     * For production, use a proper tokenizer like tiktoken.
+     * Rough token estimation.
+     *
+     * This should not be used for billing.
+     * Use a real tokenizer if exact token accounting is required.
      */
     private long estimateTokenCount(String text) {
-        return text == null ? 0 : text.length() / 4;
+
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+
+        return Math.max(
+                1,
+                text.length() / 4
+        );
     }
 }
