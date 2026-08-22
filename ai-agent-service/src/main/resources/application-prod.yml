@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=UTC
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+
+logging:
+  level:
+    com.enterprise.aiagent: INFO
+    org.springframework.ai: WARN
+    root: WARN
+
+ai:
+  agent:
+    token-budget:
+      max-per-conversation: 200000
+      max-per-request: 8000
+
+server:
+  tomcat:
+    max-connections: 500
+    threads:
+      max: 400
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true

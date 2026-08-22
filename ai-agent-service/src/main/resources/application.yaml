@@ -1,3 +1,144 @@
 spring:
   application:
     name: ai-agent-service
+
+  # ─── Database ─────────────────────────────────────
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ai_agent_db}?useSSL=true&requireSSL=false&serverTimezone=UTC&characterEncoding=utf8mb4
+    username: ${DB_USERNAME:ai_agent}
+    password: ${DB_PASSWORD:ai_agent_secret}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 10000
+      idle-timeout: 300000
+      max-lifetime: 600000
+      pool-name: ai-agent-hikari
+
+  # ─── JPA ──────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Use Flyway for schema management
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 20
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+  # ─── Flyway ───────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ─── Spring AI (OpenAI) ───────────────────────────
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${AI_MODEL:gpt-4o}
+          temperature: 0.7
+          max-tokens: 4096
+          top-p: 0.95
+
+  # ─── Threads (Virtual Threads) ────────────────────
+  threads:
+    virtual:
+      enabled: true
+
+  # ─── Cache ────────────────────────────────────────
+  cache:
+    type: simple
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=5m
+
+# ─── Downstream Services ────────────────────────────
+services:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://product-service:8081}
+  order-service:
+    url: ${ORDER_SERVICE_URL:http://order-service:8082}
+  inventory-service:
+    url: ${INVENTORY_SERVICE_URL:http://inventory-service:8083}
+  payment-service:
+    url: ${PAYMENT_SERVICE_URL:http://payment-service:8084}
+
+# ─── AI Agent Configuration ─────────────────────────
+ai:
+  agent:
+    token-budget:
+      max-per-conversation: ${TOKEN_BUDGET_MAX_CONVERSATION:100000}
+      max-per-request: ${TOKEN_BUDGET_MAX_REQUEST:8000}
+
+# ─── Resilience4j ───────────────────────────────────
+resilience4j:
+  circuitbreaker:
+    instances:
+      serviceCall:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 40
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 5
+      llmCall:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+  timelimiter:
+    instances:
+      llmCall:
+        timeoutDuration: 60s
+
+# ─── Actuator (Observability) ───────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      sla:
+        http.server.requests: 100ms, 200ms, 500ms, 1s, 5s
+  tracing:
+    sampling:
+      probability: 1.0
+
+# ─── Server ─────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    max-connections: 200
+    accept-count: 100
+    threads:
+      max: 200
+  shutdown: graceful
+
+# ─── Logging ────────────────────────────────────────
+logging:
+  level:
+    com.enterprise.aiagent: DEBUG
+    org.springframework.ai: INFO
+    io.github.resilience4j: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n"
