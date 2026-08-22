@@ -20,8 +20,6 @@ public class ProductServiceClient {
         this.restClient = builder.baseUrl("${services.product-service.url}").build();
     }
 
-    public ProductServiceClient(/* use the named bean */) {}
-
     /**
      * Constructor injection with the named RestClient bean.
      */
