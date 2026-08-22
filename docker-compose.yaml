@@ -6,7 +6,6 @@ services:
   # ═══════════════════════════════════════════════════
   #  DATABASES (one per service — database per service pattern)
   # ═══════════════════════════════════════════════════
-
   mysql-product:
     image: mysql:8.0
     container_name: mysql-product
@@ -263,6 +262,7 @@ volumes:
   inventory_data:
   payment_data:
   agent_data:
+  ai_agent_data:
 
 networks:
   microservices:

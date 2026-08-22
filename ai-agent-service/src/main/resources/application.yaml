@@ -4,9 +4,9 @@ spring:
 
   # ─── Database ─────────────────────────────────────
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:ai_agent_db}?useSSL=true&requireSSL=false&serverTimezone=UTC&characterEncoding=utf8mb4
-    username: ${DB_USERNAME:ai_agent}
-    password: ${DB_PASSWORD:ai_agent_secret}
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3315}/${DB_NAME:ai_agent_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezo
+    username: ${DB_USERNAME:svc_user}
+    password: ${DB_PASSWORD:svc_password}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
