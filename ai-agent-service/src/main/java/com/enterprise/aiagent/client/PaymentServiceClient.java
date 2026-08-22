@@ -4,6 +4,9 @@ import com.enterprise.aiagent.model.dto.PaymentResult;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -11,9 +14,12 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.util.Map;
 
-@Slf4j
+//@Slf4j
 @Component
 public class PaymentServiceClient {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(PaymentServiceClient.class);
 
     private final RestClient restClient;
 

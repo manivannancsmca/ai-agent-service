@@ -3,16 +3,20 @@ package com.enterprise.aiagent.client;
 import com.enterprise.aiagent.model.dto.ProductDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
-@Slf4j
+//@Slf4j
 @Component
 public class ProductServiceClient {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ProductServiceClient.class);
 
     private final RestClient restClient;
 
