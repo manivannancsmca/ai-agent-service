@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # ─── AI Agent Service ───────────────────────────
+  ai-agent-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=ai_agent_db
+      - DB_USERNAME=ai_agent
+      - DB_PASSWORD=ai_agent_secret
+      - PRODUCT_SERVICE_URL=http://product-service:8081
+      - ORDER_SERVICE_URL=http://order-service:8082
+      - INVENTORY_SERVICE_URL=http://inventory-service:8083
+      - PAYMENT_SERVICE_URL=http://payment-service:8084
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ai-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2'
+    restart: unless-stopped
+
+  # ─── MySQL ─────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=ai_agent_db
+      - MYSQL_USER=ai_agent
+      - MYSQL_PASSWORD=ai_agent_secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-network
+
+  # ─── Product Service (existing) ───────────────
+  product-service:
+    image: enterprise/product-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-network
+
+  # ─── Order Service (existing) ─────────────────
+  order-service:
+    image: enterprise/order-service:latest
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - ai-network
+
+  # ─── Prometheus (monitoring) ──────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ai-network
+
+  # ─── Grafana (dashboards) ─────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - ai-network
+
+volumes:
+  mysql_data:
+
+networks:
+  ai-network:
+    driver: bridge
