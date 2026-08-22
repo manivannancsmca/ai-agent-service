@@ -26,9 +26,12 @@ public class OrderTool {
             place an order. Never place orders without explicit user consent.
             """)
     public OrderDto placeOrder(
-            @ToolParam("The user's unique identifier") Long userId,
-            @ToolParam("The product ID to order") Long productId,
-            @ToolParam("The quantity to order (must be >= 1)") int quantity) {
+            @ToolParam(description = "The user's unique identifier",
+                required = true) Long userId,
+            @ToolParam(description = "The product ID to order",
+                required = true) Long productId,
+            @ToolParam(description = "The quantity to order (must be >= 1)",
+                required = true) int quantity) {
 
         log.info("Tool invoked: placeOrder(userId={}, productId={}, qty={})", userId, productId, quantity);
 
@@ -50,7 +53,8 @@ public class OrderTool {
             Use this when the user asks about a specific order.
             """)
     public OrderDto getOrderStatus(
-            @ToolParam("The order ID (e.g., 'ORD-20250822-7841')") String orderId) {
+            @ToolParam(description = "The order ID (e.g., 'ORD-20250822-7841')",
+                required = true) String orderId) {
 
         log.info("Tool invoked: getOrderStatus(orderId={})", orderId);
         return orderClient.getOrder(orderId);
@@ -62,7 +66,8 @@ public class OrderTool {
             amounts, and statuses.
             """)
     public List<OrderDto> getUserOrders(
-            @ToolParam("The user's unique identifier") Long userId) {
+            @ToolParam(description = "The user's unique identifier",
+                required = true) Long userId) {
 
         log.info("Tool invoked: getUserOrders(userId={})", userId);
         return orderClient.getUserOrders(userId, 0, 20);
@@ -75,8 +80,10 @@ public class OrderTool {
             Only use this when the user explicitly requests cancellation.
             """)
     public OrderDto cancelOrder(
-            @ToolParam("The order ID to cancel") String orderId,
-            @ToolParam("The reason for cancellation") String reason) {
+            @ToolParam(description = "The order ID to cancel",
+                required = true) String orderId,
+            @ToolParam(description = "The reason for cancellation",
+                required = true) String reason) {
 
         log.info("Tool invoked: cancelOrder(orderId={}, reason='{}')", orderId, reason);
         return orderClient.cancelOrder(orderId, reason);
@@ -88,7 +95,8 @@ public class OrderTool {
             and estimated delivery date.
             """)
     public OrderDto trackOrder(
-            @ToolParam("The order ID to track") String orderId) {
+            @ToolParam(description = "The order ID to track",
+                required = true) String orderId) {
 
         log.info("Tool invoked: trackOrder(orderId={})", orderId);
         return orderClient.trackOrder(orderId);
