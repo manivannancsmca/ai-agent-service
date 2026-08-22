@@ -1,6 +1,7 @@
 package com.enterprise.aiagent.advisor;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClientRequest;
 import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor;
@@ -21,16 +22,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * Protects the application from unexpectedly high LLM costs by enforcing:
  *
  * <ul>
- *     <li>Maximum tokens per conversation</li>
- *     <li>Maximum estimated tokens per request</li>
+ * <li>Maximum tokens per conversation</li>
+ * <li>Maximum estimated tokens per request</li>
  * </ul>
  *
  * <p>
  * This advisor uses the Spring AI 1.0 CallAdvisor API.
  */
-@Slf4j
+// @Slf4j
 @Component
 public class TokenBudgetAdvisor implements CallAdvisor {
+
+    private static final Logger log = LoggerFactory.getLogger(TokenBudgetAdvisor.class);
 
     @Value("${ai.agent.token-budget.max-per-conversation:100000}")
     private long maxTokensPerConversation;
@@ -38,8 +41,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
     @Value("${ai.agent.token-budget.max-per-request:8000}")
     private long maxTokensPerRequest;
 
-    private final ConcurrentHashMap<String, AtomicLong> conversationTokenUsage =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicLong> conversationTokenUsage = new ConcurrentHashMap<>();
 
     @Override
     public ChatClientResponse adviseCall(
@@ -52,8 +54,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
 
         AtomicLong usage = conversationTokenUsage.computeIfAbsent(
                 conversationId,
-                key -> new AtomicLong(0)
-        );
+                key -> new AtomicLong(0));
 
         long currentUsage = usage.get();
 
@@ -67,13 +68,11 @@ public class TokenBudgetAdvisor implements CallAdvisor {
                     "Token budget exceeded: conversation={}, current={}, max={}",
                     conversationId,
                     currentUsage,
-                    maxTokensPerConversation
-            );
+                    maxTokensPerConversation);
 
             throw new TokenBudgetExceededException(
                     "This conversation has reached its token limit. " +
-                    "Please start a new conversation to continue."
-            );
+                            "Please start a new conversation to continue.");
         }
 
         // ---------------------------------------------------------
@@ -89,8 +88,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
         recordTokenUsage(
                 conversationId,
                 usage,
-                response
-        );
+                response);
 
         return response;
     }
@@ -136,8 +134,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
                 conversationId,
                 totalTokens,
                 usage.get(),
-                maxTokensPerConversation
-        );
+                maxTokensPerConversation);
     }
 
     /**
@@ -149,8 +146,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
 
         log.info(
                 "Token budget reset: conversation={}",
-                conversationId
-        );
+                conversationId);
     }
 
     /**
@@ -158,8 +154,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
      */
     public long getCurrentUsage(String conversationId) {
 
-        AtomicLong usage =
-                conversationTokenUsage.get(conversationId);
+        AtomicLong usage = conversationTokenUsage.get(conversationId);
 
         return usage != null
                 ? usage.get()
@@ -175,8 +170,7 @@ public class TokenBudgetAdvisor implements CallAdvisor {
 
         return Math.max(
                 0,
-                maxTokensPerConversation - current
-        );
+                maxTokensPerConversation - current);
     }
 
     @Override
