@@ -18,13 +18,17 @@ import java.util.UUID;
 
 //@Slf4j
 @Service
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class ConversationService {
 
     private static final Logger log =
             LoggerFactory.getLogger(ConversationService.class);
 
     private final ConversationRepository conversationRepository;
+
+    public ConversationService(ConversationRepository conversationRepository) {
+        this.conversationRepository = conversationRepository;
+    }
 
     @Transactional
     public ConversationEntity getOrCreate(String conversationId, String userId) {

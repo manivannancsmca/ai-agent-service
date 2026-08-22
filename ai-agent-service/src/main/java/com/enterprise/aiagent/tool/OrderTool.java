@@ -14,12 +14,16 @@ import java.util.Map;
 
 //@Slf4j
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class OrderTool {
 
         private static final Logger log = LoggerFactory.getLogger(OrderTool.class);
 
         private final OrderServiceClient orderClient;
+
+        public OrderTool(OrderServiceClient orderClient) {
+                this.orderClient = orderClient;
+        }
 
         @Tool(description = """
                         Place a new order for a product on behalf of a user.

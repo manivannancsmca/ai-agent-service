@@ -12,12 +12,16 @@ import org.springframework.stereotype.Component;
 
 //@Slf4j
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class InventoryTool {
 
     private static final Logger log = LoggerFactory.getLogger(InventoryTool.class);
 
     private final InventoryServiceClient inventoryClient;
+
+    public InventoryTool(InventoryServiceClient inventoryClient) {
+        this.inventoryClient = inventoryClient;
+    }
 
     @Tool(description = """
             Check the current inventory/stock level for a specific product.

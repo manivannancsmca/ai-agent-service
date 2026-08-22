@@ -16,12 +16,16 @@ import java.math.BigDecimal;
 
 //@Slf4j
 @Component
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class PaymentTool {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentTool.class);
 
     private final PaymentServiceClient paymentClient;
+
+    public PaymentTool(PaymentServiceClient paymentClient) {
+        this.paymentClient = paymentClient;
+    }
 
     @Tool(description = """
             Process a payment for an order. Requires the order ID,

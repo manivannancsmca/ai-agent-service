@@ -15,13 +15,17 @@ import reactor.core.publisher.Flux;
 //@Slf4j
 @RestController
 @RequestMapping("/api/v1/agent")
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class AgentController {
 
     	private static final Logger log =
 	            LoggerFactory.getLogger(AgentController.class);
 
     private final AgentOrchestrator orchestrator;
+
+    public AgentController(AgentOrchestrator orchestrator) {
+        this.orchestrator = orchestrator;
+    }
 
     /**
      * Main chat endpoint. Sends a message to the AI agent and receives a response.

@@ -19,13 +19,16 @@ import java.util.List;
  */
 //@Slf4j
 @Component
-@RequiredArgsConstructor
 public class ProductTool {
 
     private static final Logger log =
             LoggerFactory.getLogger(ProductTool.class);
 
     private final ProductServiceClient productClient;
+
+    public ProductTool(ProductServiceClient productClient) {
+        this.productClient = productClient;
+    }
 
     @Tool(description = """
             Search for products in the catalog using a keyword.

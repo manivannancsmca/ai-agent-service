@@ -12,48 +12,51 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/conversations")
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 public class ConversationController {
 
-    private final ConversationService conversationService;
-    private final JpaChatMemory chatMemory;
-    private final TokenBudgetAdvisor tokenBudgetAdvisor;
+        private final ConversationService conversationService;
+        private final JpaChatMemory chatMemory;
+        private final TokenBudgetAdvisor tokenBudgetAdvisor;
 
-    @GetMapping
-    public ResponseEntity<Page<ConversationEntity>> getUserConversations(
-            @RequestParam String userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+        public ConversationController(ConversationService conversationService,
+                        JpaChatMemory chatMemory, TokenBudgetAdvisor tokenBudgetAdvisor) {
+                this.conversationService = conversationService;
+                this.chatMemory = chatMemory;
+                this.tokenBudgetAdvisor = tokenBudgetAdvisor;
+        }
 
-        return ResponseEntity.ok(
-                conversationService.getUserConversations(
-                        userId,
-                        PageRequest.of(page, size)
-                )
-        );
-    }
+        @GetMapping
+        public ResponseEntity<Page<ConversationEntity>> getUserConversations(
+                        @RequestParam String userId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
 
-    @GetMapping("/{conversationId}/messages")
-    public ResponseEntity<?> getConversationMessages(
-            @PathVariable String conversationId,
-            @RequestParam(defaultValue = "100") int limit) {
+                return ResponseEntity.ok(
+                                conversationService.getUserConversations(
+                                                userId,
+                                                PageRequest.of(page, size)));
+        }
 
-        return ResponseEntity.ok(
-                chatMemory.getHistory(
-                        conversationId,
-                        limit
-                )
-        );
-    }
+        @GetMapping("/{conversationId}/messages")
+        public ResponseEntity<?> getConversationMessages(
+                        @PathVariable String conversationId,
+                        @RequestParam(defaultValue = "100") int limit) {
 
-    @DeleteMapping("/{conversationId}")
-    public ResponseEntity<Void> deleteConversation(
-            @PathVariable String conversationId) {
+                return ResponseEntity.ok(
+                                chatMemory.getHistory(
+                                                conversationId,
+                                                limit));
+        }
 
-        chatMemory.clear(conversationId);
+        @DeleteMapping("/{conversationId}")
+        public ResponseEntity<Void> deleteConversation(
+                        @PathVariable String conversationId) {
 
-        tokenBudgetAdvisor.resetUsage(conversationId);
+                chatMemory.clear(conversationId);
 
-        return ResponseEntity.noContent().build();
-    }
+                tokenBudgetAdvisor.resetUsage(conversationId);
+
+                return ResponseEntity.noContent().build();
+        }
 }
