@@ -3,7 +3,7 @@ package com.enterprise.aiagent.client;
 import com.enterprise.aiagent.model.dto.OrderDto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import lombok.extern.slf4j.Slf4j;
+//import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -11,9 +11,15 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+//@Slf4j
 @Component
 public class OrderServiceClient {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(OrderServiceClient.class);
 
     private final RestClient restClient;
 
