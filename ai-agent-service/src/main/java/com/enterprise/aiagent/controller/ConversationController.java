@@ -19,35 +19,41 @@ public class ConversationController {
     private final JpaChatMemory chatMemory;
     private final TokenBudgetAdvisor tokenBudgetAdvisor;
 
-    /**
-     * Get all conversations for a user.
-     */
     @GetMapping
     public ResponseEntity<Page<ConversationEntity>> getUserConversations(
             @RequestParam String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+
         return ResponseEntity.ok(
-                conversationService.getUserConversations(userId, PageRequest.of(page, size)));
+                conversationService.getUserConversations(
+                        userId,
+                        PageRequest.of(page, size)
+                )
+        );
     }
 
-    /**
-     * Get conversation history (messages).
-     */
     @GetMapping("/{conversationId}/messages")
     public ResponseEntity<?> getConversationMessages(
-            @PathVariable String conversationId) {
-        var messages = chatMemory.get(conversationId, 100);
-        return ResponseEntity.ok(messages);
+            @PathVariable String conversationId,
+            @RequestParam(defaultValue = "100") int limit) {
+
+        return ResponseEntity.ok(
+                chatMemory.getHistory(
+                        conversationId,
+                        limit
+                )
+        );
     }
 
-    /**
-     * Delete a conversation and its history.
-     */
     @DeleteMapping("/{conversationId}")
-    public ResponseEntity<Void> deleteConversation(@PathVariable String conversationId) {
+    public ResponseEntity<Void> deleteConversation(
+            @PathVariable String conversationId) {
+
         chatMemory.clear(conversationId);
+
         tokenBudgetAdvisor.resetUsage(conversationId);
+
         return ResponseEntity.noContent().build();
     }
 }

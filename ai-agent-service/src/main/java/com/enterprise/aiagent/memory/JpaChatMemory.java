@@ -359,4 +359,27 @@ public class JpaChatMemory implements ChatMemory {
                 text.length() / 4
         );
     }
+
+    @Transactional(readOnly = true)
+public List<Message> getHistory(String conversationId, int limit) {
+
+    List<MessageEntity> entities =
+            messageRepository.findLastNByConversationId(
+                    conversationId,
+                    limit
+            );
+
+    if (entities.isEmpty()) {
+        return List.of();
+    }
+
+    List<Message> messages =
+            new ArrayList<>(entities.size());
+
+    for (MessageEntity entity : entities.reversed()) {
+        messages.add(deserializeMessage(entity));
+    }
+
+    return messages;
+}
 }
