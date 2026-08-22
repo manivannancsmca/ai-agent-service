@@ -15,34 +15,71 @@ public class InventoryTool {
 
     private final InventoryServiceClient inventoryClient;
 
-    @Tool(description = """
+    @Tool(
+        description = """
             Check the current inventory/stock level for a specific product.
             Returns the available quantity, reserved quantity, warehouse location,
             and whether the product is running low on stock.
             Use this before recommending a product to verify it's available.
-            """)
+            """
+    )
     public InventoryDto checkStock(
-            @ToolParam("The product ID to check inventory for") Long productId) {
+            @ToolParam(
+                description = "The unique product ID to check inventory for",
+                required = true
+            )
+            Long productId) {
 
         log.info("Tool invoked: checkStock(productId={})", productId);
+
         InventoryDto inventory = inventoryClient.checkInventory(productId);
 
         if (inventory == null) {
             log.warn("No inventory data found for product {}", productId);
         }
+
         return inventory;
     }
 
-    @Tool(description = """
-            Reserve stock for a product. This is called internally when
-            an order is being placed to ensure the item is available.
-            Returns true if reservation succeeded, false if insufficient stock.
-            """)
+    @Tool(
+        description = """
+            Reserve stock for a product.
+            Use this when an order is being placed to ensure the requested
+            quantity is available.
+            Returns true if the reservation succeeds, or false if there is
+            insufficient stock.
+            """
+    )
     public boolean reserveStock(
-            @ToolParam("The product ID") Long productId,
-            @ToolParam("The quantity to reserve") int quantity) {
+            @ToolParam(
+                description = "The unique product ID for which stock should be reserved",
+                required = true
+            )
+            Long productId,
 
-        log.info("Tool invoked: reserveStock(productId={}, qty={})", productId, quantity);
+            @ToolParam(
+                description = "The quantity of units to reserve. Must be greater than zero.",
+                required = true
+            )
+            int quantity) {
+
+        log.info(
+            "Tool invoked: reserveStock(productId={}, qty={})",
+            productId,
+            quantity
+        );
+
+        if (quantity <= 0) {
+            log.warn(
+                "Invalid reservation quantity: productId={}, qty={}",
+                productId,
+                quantity
+            );
+            throw new IllegalArgumentException(
+                "Reservation quantity must be greater than zero"
+            );
+        }
+
         return inventoryClient.reserveStock(productId, quantity);
     }
 }
