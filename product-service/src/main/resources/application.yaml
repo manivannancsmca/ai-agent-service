@@ -47,3 +47,4 @@ management:
 logging:
   level:
     com.enterprise.product: INFO
+    
