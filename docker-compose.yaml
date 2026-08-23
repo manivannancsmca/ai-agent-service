@@ -101,10 +101,6 @@ services:
     networks:
       - microservices
 
-  # ═══════════════════════════════════════════════════
-  #  MICROSERVICES
-  # ═══════════════════════════════════════════════════
-
   product-service:
     build:
       context: ./product-service
