@@ -114,7 +114,6 @@ public class OrderService {
     public OrderDto trackOrder(String orderId) {
         log.info("Tracking order {}", orderId);
         // In production, this would integrate with a shipping provider API.
-        // For now, return the order with its current status.
         return orderMapper.toDto(findByOrderId(orderId));
     }
 
