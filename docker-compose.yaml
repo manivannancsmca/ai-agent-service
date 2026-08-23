@@ -219,10 +219,6 @@ services:
       - microservices
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════
-  #  MONITORING
-  # ═══════════════════════════════════════════════════
-
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
