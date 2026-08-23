@@ -13,3 +13,4 @@ logging:
   level:
     com.enterprise.product: DEBUG
     org.hibernate.SQL: DEBUG
+    
