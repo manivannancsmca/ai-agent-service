@@ -185,10 +185,6 @@ services:
       - microservices
     restart: unless-stopped
 
-  # ═══════════════════════════════════════════════════
-  #  AI AGENT SERVICE (the orchestrator)
-  # ═══════════════════════════════════════════════════
-
   ai-agent-service:
     build:
       context: ./ai-agent-service
