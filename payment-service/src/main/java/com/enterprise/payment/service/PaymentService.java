@@ -161,8 +161,6 @@ public class PaymentService {
         );
     }
 
-    // ─── Internal Helpers ────────────────────────────────────────
-
     /**
      * Simulates a payment gateway call.
      * In production, replace with actual gateway integration.
